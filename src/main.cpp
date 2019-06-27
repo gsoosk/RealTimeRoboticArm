@@ -160,23 +160,30 @@ void initServoArrays(int servoNum) {
 }
 
 void runSavedState() {
-  int maxSaved = lastSaved[0];
-  for(int i = 0; i < SERVO_COUNT; i++) {
-    if(lastSaved[i] > maxSaved)
-      maxSaved = lastSaved[i];
-  }
-  for (int i = 0; i < MAX_SAVED_VALUES && i < maxSaved - 1; i++) {
+  int savedActionsTime = 0;
+  int indexServo[4] = {0, 0, 0, 0};
+  
+  for(int i = 0; i < lastSaved[0]; i++)
+    savedActionsTime += servoTimePassed[0][i];
+  
+
+  for (int t = 0; t < savedActionsTime; t++) {
     for (int j = 0; j < SAVE_UNIT_PERIOD; j++) {
       servo0.write(
-          servoSaved[0][i] +
-          (j * ((servoSaved[0][i + 1] - servoSaved[0][i]) / SAVE_UNIT_PERIOD)));
+          servoSaved[0][indexServo[0]] +
+          (j * ((servoSaved[0][indexServo[0] + 1] - servoSaved[0][indexServo[0]]) / SAVE_UNIT_PERIOD)));
       servo1.write(
-          servoSaved[1][i] +
-          (j * ((servoSaved[1][i + 1] - servoSaved[1][i]) / SAVE_UNIT_PERIOD)));
+          servoSaved[1][indexServo[1]] +
+          (j * ((servoSaved[1][indexServo[1] + 1] - servoSaved[1][indexServo[1]]) / SAVE_UNIT_PERIOD)));
       servo2.write(
-          servoSaved[2][i] +
-          (j * ((servoSaved[2][i + 1] - servoSaved[2][i]) / SAVE_UNIT_PERIOD)));
+          servoSaved[2][indexServo[2]] +
+          (j * ((servoSaved[2][indexServo[2] + 1] - servoSaved[2][indexServo[2]]) / SAVE_UNIT_PERIOD)));
       delay(40);
+    }
+    for (int i = 0; i < SERVO_COUNT; i++ ){
+      servoTimePassed[i][indexServo[i]] --;
+      if(servoTimePassed[i][indexServo[i]] <= 0 )
+        indexServo[i] ++;
     }
   }
 }
