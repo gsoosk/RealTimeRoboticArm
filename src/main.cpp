@@ -75,10 +75,15 @@ void setup() {
   pinMode(PLAY_BUTTON_PIN, INPUT_PULLUP);
   pinMode(SAVE_BUTTON_PIN, INPUT_PULLUP);
 
+  read_timer.start();
+  button_timer.start();
+
   Serial.begin(9600);
 }
 
 void loop() {
+  read_timer.update();
+  button_timer.update();
   readAndWrite();
   checkButton();
 }
