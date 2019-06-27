@@ -17,6 +17,8 @@
 #define SERVO_MAX 180
 #define SERVO_MIN 0
 
+#define SERVO_COUNT 4
+
 // TODO: Adding servo 3 min and max microsecond
 
 #define POT_0_MAX 991
@@ -46,9 +48,10 @@ Servo servo0;
 Servo servo2;
 Servo servo1;
 
-int lastSaved;
+int lastSaved[SERVO_COUNT];
 bool saving = false;
-int servoSaved[4][MAX_SAVED_VALUES];
+int servoSaved[SERVO_COUNT][MAX_SAVED_VALUES];
+int servoTimePassed[SERVO_COUNT][MAX_SAVED_VALUES];
 
 Ticker read_timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
 Ticker button_timer(checkButton, BUTTON_PERIOD, ENDLESS_TIMER, MILLIS);
@@ -66,7 +69,8 @@ void setup() {
   pinMode(A0, INPUT);
 
   // init servos array
-  lastSaved = 0;
+  for(int i = 0; i < SERVO_COUNT; i++) 
+    lastSaved[i] = 0;
   initServoArrays(0);
   initServoArrays(1);
   initServoArrays(2);
@@ -88,6 +92,21 @@ void loop() {
   checkButton();
 }
 
+bool hasSameValue(int newValue, int index) {
+  return servoSaved[index][lastSaved[index] - 1] >= newValue - 2 && servoSaved[index][lastSaved[index] - 1] <= newValue + 2;
+}
+
+void updateSaved(int servo_0_value, int servo_1_value, int servo_2_value, int index) {
+  if(!hasSameValue(servo_0_value, 0)) {
+    servoSaved[index][lastSaved[index]] = servo_0_value;
+    servoTimePassed[index][lastSaved[index]] = 1;
+    lastSaved[index] += 1;
+  }
+  else {
+    servoTimePassed[index][lastSaved[index]] += 1;
+  }
+}
+
 void readAndWrite() {
   int x0 = map(analogRead(A0), POT_0_MAX, POT_0_MIN, SERVO_MIN, SERVO_MAX);
   servo0.write(x0);
@@ -96,11 +115,15 @@ void readAndWrite() {
   int x2 = map(analogRead(A2), POT_2_MAX, POT_2_MIN, SERVO_MIN, SERVO_MAX);
   servo2.write(x2);
 
-  if (lastSaved != MAX_SAVED_VALUES - 1 && saving) {
-    servoSaved[0][lastSaved] = x0;
-    servoSaved[1][lastSaved] = x1;
-    servoSaved[2][lastSaved] = x2;
-    lastSaved++;
+  int maxSaved = lastSaved[0];
+  for(int i = 0; i < SERVO_COUNT; i++) {
+    if(lastSaved[i] > maxSaved)
+      maxSaved = lastSaved[i];
+  }
+  if (maxSaved != MAX_SAVED_VALUES - 1 && saving) {
+    updateSaved(x0, x1, x2, 0);
+    updateSaved(x0, x1, x2, 1);
+    updateSaved(x0, x1, x2, 2);    
   }
 }
 
@@ -117,19 +140,28 @@ void checkButton() {
     }
     Serial.println("Save Button");
     saving = !saving;
-    if(saving)
-      lastSaved = 0;
+    if(saving) {
+      for(int i = 0; i < SERVO_COUNT; i++)
+      lastSaved[i] = 0;
+    }
   }
 }
 
 void initServoArrays(int servoNum) {
   for (int i = 0; i < MAX_SAVED_VALUES; i++) {
     servoSaved[servoNum][i] = 0;
+    servoTimePassed[servoNum][i] = 0;
   }
+  lastSaved[servoNum] = 0;
 }
 
 void runSavedState() {
-  for (int i = 0; i < MAX_SAVED_VALUES && i < lastSaved; i++) {
+  int maxSaved = lastSaved[0];
+  for(int i = 0; i < SERVO_COUNT; i++) {
+    if(lastSaved[i] > maxSaved)
+      maxSaved = lastSaved[i];
+  }
+  for (int i = 0; i < MAX_SAVED_VALUES && i < maxSaved; i++) {
     servo0.write(servoSaved[0][i]);
     servo1.write(servoSaved[1][i]);
     servo2.write(servoSaved[2][i]);
