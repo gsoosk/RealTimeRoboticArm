@@ -162,11 +162,10 @@ void initServoArrays(int servoNum) {
 void runSavedState() {
   int savedActionsTime = 0;
   int indexServo[4] = {0, 0, 0, 0};
-  int servoSlotRunnedTime[4] = {0, 0, 0, 0}
+  int servoSlotRunnedTime[4] = {0, 0, 0, 0};
   
   for(int i = 0; i < lastSaved[0]; i++)
     savedActionsTime += servoTimePassed[0][i];
-  
 
   for (int t = 0; t < savedActionsTime; t++) {
     for (int j = 0; j < SAVE_UNIT_PERIOD; j++) {
