@@ -32,7 +32,8 @@
 
 #define MAX_SAVED_VALUES 100
 
-#define SAVING_BUTTON_PIN 8
+#define PLAY_BUTTON_PIN 8
+#define SAVE_BUTTON_PIN 9
 // Declarations
 void readAndWrite();
 void runSavedState();
@@ -44,7 +45,7 @@ Servo servo2;
 Servo servo1;
 
 int lastSaved;
-bool saving = true;
+bool saving = false;
 int servoSaved[4][MAX_SAVED_VALUES];
 
 Ticker timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
@@ -68,7 +69,8 @@ void setup() {
   initServoArrays(2);
 
   // saving button
-  pinMode(SAVING_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(PLAY_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(SAVE_BUTTON_PIN, INPUT_PULLUP);
 
   Serial.begin(9600);
 
@@ -99,12 +101,20 @@ void readAndWrite() {
 }
 
 void checkButton() {
-  if (digitalRead(SAVING_BUTTON_PIN) == LOW) {
-    while (digitalRead(SAVING_BUTTON_PIN) == LOW) {
+  if (digitalRead(PLAY_BUTTON_PIN) == LOW) {
+    while (digitalRead(PLAY_BUTTON_PIN) == LOW) {
     }
-    // saving = !saving;
-    Serial.println("Button");
+    Serial.println("Play Button");
     runSavedState();
+  }
+
+  if (digitalRead(SAVE_BUTTON_PIN) == LOW) {
+    while (digitalRead(SAVE_BUTTON_PIN) == LOW) {
+    }
+    Serial.println("Save Button");
+    saving = !saving;
+    if(saving)
+      lastSaved = 0;
   }
 }
 
