@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <Servo.h>
-#include "Ticker.h" // For Timer 
+// #include "Ticker.h" // For Timer 
 
 #define SERVO_0_MIN_MICROSECOND 590
 #define SERVO_0_MAX_MICROSECOND 2245
@@ -37,7 +37,7 @@ Servo servo0;
 Servo servo2;
 Servo servo1;
 
-Ticker timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
+// Ticker timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
 
 void setup() {
   // default values for attach are (544 , 2400)
@@ -48,11 +48,28 @@ void setup() {
   pinMode(A1, INPUT);
   pinMode(A0, INPUT);
 
-  timer.start();
+  cli();//stop interrupts
+
+  //set timer0 interrupt at 2kHz
+  TCCR0A = 0;// set entire TCCR0A register to 0
+  TCCR0B = 0;// same for TCCR0B
+  TCNT0  = 0;//initialize counter value to 0
+  // set compare match register for 25hz increments
+  OCR0A = 9999;// = (16*10^6) / (25*64) - 1 (must be <256)
+  // turn on CTC mode
+  TCCR0A |= (1 << WGM01);
+  // Set CS01 and CS00 bits for 64 prescaler
+  TCCR0B |= (1 << CS01) | (1 << CS00);   
+  // enable timer compare interrupt
+  TIMSK0 |= (1 << OCIE0A);
+
+  sei();//allow interrupts
+
+  // timer.start();
 }
 
 void loop() {
-  timer.update();
+  // timer.update();
 }
 
 void readAndWrite()
