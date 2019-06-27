@@ -28,13 +28,15 @@
 
 #define ENDLESS_TIMER 0
 #define BUTTON_PERIOD 20 // In Miliseconds => 50 Hz
-#define TIMER_PERIOD 40 // In Miliseconds => 25 Hz
-#define CHECK_BUTTON 
+#define TIMER_PERIOD 40  // In Miliseconds => 25 Hz
+#define CHECK_BUTTON
 
-#define MAX_SAVED_VALUES 100
+#define MAX_SAVED_VALUES 200
 
 #define PLAY_BUTTON_PIN 8
 #define SAVE_BUTTON_PIN 9
+
+#define SAVE_UNIT_PERIOD 8
 // Declarations
 void readAndWrite();
 void runSavedState();
@@ -48,6 +50,7 @@ Servo servo1;
 
 int lastSaved;
 bool saving = false;
+int checkSavingPeriod = 0;
 int servoSaved[4][MAX_SAVED_VALUES];
 
 Ticker read_timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
@@ -84,8 +87,6 @@ void setup() {
 void loop() {
   read_timer.update();
   button_timer.update();
-  readAndWrite();
-  checkButton();
 }
 
 void readAndWrite() {
@@ -97,10 +98,13 @@ void readAndWrite() {
   servo2.write(x2);
 
   if (lastSaved != MAX_SAVED_VALUES - 1 && saving) {
-    servoSaved[0][lastSaved] = x0;
-    servoSaved[1][lastSaved] = x1;
-    servoSaved[2][lastSaved] = x2;
-    lastSaved++;
+    if (checkSavingPeriod % SAVE_UNIT_PERIOD == 0) {
+      servoSaved[0][lastSaved] = x0;
+      servoSaved[1][lastSaved] = x1;
+      servoSaved[2][lastSaved] = x2;
+      lastSaved++;
+    }
+    checkSavingPeriod++;
   }
 }
 
@@ -117,7 +121,7 @@ void checkButton() {
     }
     Serial.println("Save Button");
     saving = !saving;
-    if(saving)
+    if (saving)
       lastSaved = 0;
   }
 }
@@ -129,10 +133,18 @@ void initServoArrays(int servoNum) {
 }
 
 void runSavedState() {
-  for (int i = 0; i < MAX_SAVED_VALUES && i < lastSaved; i++) {
-    servo0.write(servoSaved[0][i]);
-    servo1.write(servoSaved[1][i]);
-    servo2.write(servoSaved[2][i]);
-    delay(40);
+  for (int i = 0; i < MAX_SAVED_VALUES && i < lastSaved - 1; i++) {
+    for (int j = 0; j < SAVE_UNIT_PERIOD; j++) {
+      servo0.write(
+          servoSaved[0][i] +
+          (j * ((servoSaved[0][i + 1] - servoSaved[0][i]) / SAVE_UNIT_PERIOD)));
+      servo1.write(
+          servoSaved[1][i] +
+          (j * ((servoSaved[1][i + 1] - servoSaved[1][i]) / SAVE_UNIT_PERIOD)));
+      servo2.write(
+          servoSaved[2][i] +
+          (j * ((servoSaved[2][i + 1] - servoSaved[2][i]) / SAVE_UNIT_PERIOD)));
+      delay(40);
+    }
   }
 }
