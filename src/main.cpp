@@ -1,5 +1,4 @@
 #include "Ticker.h" // For Timer
-#include "Timer.h"
 #include <Arduino.h>
 #include <Servo.h>
 
@@ -28,7 +27,9 @@
 #define POT_2_MIN 64
 
 #define ENDLESS_TIMER 0
-#define TIMER_PERIOD 10 // In Milis Second = 25 Hz
+#define BUTTON_PERIOD 20 // In Miliseconds => 50 Hz
+#define TIMER_PERIOD 40 // In Miliseconds => 25 Hz
+#define CHECK_BUTTON 
 
 #define MAX_SAVED_VALUES 100
 
@@ -38,6 +39,7 @@ void readAndWrite();
 void runSavedState();
 void checkButton();
 void initServoArrays(int);
+void checkButton();
 
 Servo servo0;
 Servo servo2;
@@ -47,7 +49,8 @@ int lastSaved;
 bool saving = true;
 int servoSaved[4][MAX_SAVED_VALUES];
 
-Ticker timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
+Ticker read_timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
+Ticker button_timer(checkButton, BUTTON_PERIOD, ENDLESS_TIMER, MILLIS);
 
 void setup() {
   // setup servos : default values for attach are (544 , 2400)
@@ -71,13 +74,9 @@ void setup() {
   pinMode(SAVING_BUTTON_PIN, INPUT_PULLUP);
 
   Serial.begin(9600);
-
-  // timer.start();
 }
 
 void loop() {
-  // timer.update();
-  delay(40);
   readAndWrite();
   checkButton();
 }
