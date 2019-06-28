@@ -33,7 +33,7 @@
 #define TIMER_PERIOD 40  // In Miliseconds => 25 Hz
 #define CHECK_BUTTON
 
-#define MAX_SAVED_VALUES 100
+#define MAX_SAVED_VALUES 200
 
 #define PLAY_BUTTON_PIN 8
 #define SAVE_BUTTON_PIN 9
@@ -48,10 +48,10 @@ void checkButton();
 
 Servo servo[SERVO_COUNT];
 
-int lastSaved[SERVO_COUNT];
+byte lastSaved[SERVO_COUNT];
 bool saving = false;
-int servoSaved[SERVO_COUNT][MAX_SAVED_VALUES];
-int servoTimePassed[SERVO_COUNT][MAX_SAVED_VALUES];
+byte servoSaved[SERVO_COUNT][MAX_SAVED_VALUES];
+byte servoTimePassed[SERVO_COUNT][MAX_SAVED_VALUES];
 int checkSavingPeriod = 0;
 
 Ticker read_timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
@@ -172,10 +172,10 @@ void runSavedState() {
     savedActionsTime += servoTimePassed[0][i];
 
   for (int t = 0; t < savedActionsTime - 1; t++) {
-    for (int j = 0; j < SAVE_UNIT_PERIOD; j++) {
+    for (byte j = 0; j < SAVE_UNIT_PERIOD; j++) {
 
       byte servoValue[4];
-      for (int i = 0; i < SERVO_COUNT; i++) {
+      for (byte i = 0; i < SERVO_COUNT; i++) {
         servoValue[i] =
             servoTimePassed[i][servoIndex[i]] - servoSlotRunnedTime[i] == 1
                 ? servoSaved[i][servoIndex[i]] +
@@ -190,7 +190,7 @@ void runSavedState() {
       servo[2].write(servoValue[2]);
     }
 
-    for (int i = 0; i < SERVO_COUNT; i++) {
+    for (byte i = 0; i < SERVO_COUNT; i++) {
       servoSlotRunnedTime[i]++;
       if (servoTimePassed[i][servoIndex[i]] == servoSlotRunnedTime[i]) {
         servoIndex[i]++;
