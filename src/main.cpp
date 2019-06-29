@@ -8,18 +8,20 @@
 #define SERVO_1_MAX_MICROSECOND 2400
 #define SERVO_2_MIN_MICROSECOND 675
 #define SERVO_2_MAX_MICROSECOND 2525
+#define SERVO_3_MIN_MICROSECOND 800
+#define SERVO_3_MAX_MICROSECOND 2000
 
 #define SERVO_0_PIN 3
 #define SERVO_1_PIN 5
 #define SERVO_2_PIN 6
-// TODO: SERVO_3_PIN
+#define SERVO_3_PIN 10
 
 #define SERVO_MAX 180
 #define SERVO_MIN 0
 
 #define SERVO_COUNT 4
 
-// TODO: Adding servo 3 min and max microsecond
+
 
 #define POT_0_MAX 991
 #define POT_0_MIN 60
@@ -27,6 +29,8 @@
 #define POT_1_MIN 100
 #define POT_2_MAX 1012
 #define POT_2_MIN 64
+#define POT_3_MAX 230
+#define POT_3_MIN 0
 
 #define ENDLESS_TIMER 0
 #define BUTTON_PERIOD 20 // In Miliseconds => 50 Hz
@@ -65,6 +69,8 @@ void setup() {
                   SERVO_1_MAX_MICROSECOND); // defaults are 544 - 2400 to
   servo[2].attach(SERVO_2_PIN, SERVO_2_MIN_MICROSECOND,
                   SERVO_2_MAX_MICROSECOND); // defaults are 544 - 2400 to
+  servo[3].attach(SERVO_3_PIN, SERVO_3_MIN_MICROSECOND,                
+                  SERVO_3_MAX_MICROSECOND);
   pinMode(A2, INPUT);
   pinMode(A1, INPUT);
   pinMode(A0, INPUT);
@@ -75,6 +81,7 @@ void setup() {
   initServoArrays(0);
   initServoArrays(1);
   initServoArrays(2);
+  initServoArrays(3);
 
   // saving button
   pinMode(PLAY_BUTTON_PIN, INPUT_PULLUP);
@@ -117,6 +124,8 @@ void readAndWrite() {
   servo[1].write(x[1]);
   x[2] = map(analogRead(A2), POT_2_MAX, POT_2_MIN, SERVO_MIN, SERVO_MAX);
   servo[2].write(x[2]);
+  x[3] = map(analogRead(A3), POT_3_MAX, POT_3_MIN, SERVO_MIN, SERVO_MAX);
+  servo[3].write(x[3]);
 
 
   int maxSaved = lastSaved[0];
@@ -188,6 +197,7 @@ void runSavedState() {
       servo[0].write(servoValue[0]);
       servo[1].write(servoValue[1]);
       servo[2].write(servoValue[2]);
+      servo[3].write(servoValue[3]);
     }
 
     for (byte i = 0; i < SERVO_COUNT; i++) {
