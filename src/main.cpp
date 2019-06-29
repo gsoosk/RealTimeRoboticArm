@@ -43,6 +43,7 @@
 #define SAVE_BUTTON_PIN 9
 
 #define SAVE_UNIT_PERIOD 4
+#define SAVE_THRESHOLD 1
 // Declarations
 void readAndWrite();
 void runSavedState();
@@ -101,8 +102,8 @@ void loop() {
 bool hasSameValue(int newValue, int index) {
   if(lastSaved[index] == 0)
     return false;
-  return servoSaved[index][lastSaved[index] - 1] >= newValue - 2 &&
-         servoSaved[index][lastSaved[index] - 1] <= newValue + 2;
+  return servoSaved[index][lastSaved[index] - 1] >= newValue - SAVE_THRESHOLD &&
+         servoSaved[index][lastSaved[index] - 1] <= newValue + SAVE_THRESHOLD`  ;
 }
 
 void updateSaved(int servo_value, int index) {
@@ -138,6 +139,7 @@ void readAndWrite() {
       updateSaved(x[0], 0);
       updateSaved(x[1], 1);
       updateSaved(x[2], 2);
+      updateSaved(x[3], 3);
     }
     checkSavingPeriod++;
   }
