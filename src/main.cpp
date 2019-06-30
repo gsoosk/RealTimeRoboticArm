@@ -152,6 +152,7 @@ void checkButton() {
     }
     playing = !playing;
     Serial.println("Play Button");
+    runSavedState();
   }
 
   if (digitalRead(SAVE_BUTTON_PIN) == LOW) {
