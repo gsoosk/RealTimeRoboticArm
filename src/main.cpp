@@ -59,6 +59,7 @@ bool playing = false;
 byte servoSaved[SERVO_COUNT][MAX_SAVED_VALUES];
 byte servoTimePassed[SERVO_COUNT][MAX_SAVED_VALUES];
 int checkSavingPeriod = 0;
+unsigned long time;
 
 Ticker read_timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
 Ticker button_timer(checkButton, BUTTON_PERIOD, ENDLESS_TIMER, MILLIS);
@@ -91,6 +92,8 @@ void setup() {
 
   read_timer.start();
   button_timer.start();
+  
+  time = millis();
 
   Serial.begin(9600);
 }
@@ -174,12 +177,22 @@ void initServoArrays(int servoNum) {
   }
   lastSaved[servoNum] = 0;
 }
+void waitAndCheckButton(int ms) {
+  uint32_t start = micros();
+	while (ms > 0) {
+		yield();
+		while ( ms > 0 && (micros() - start) >= 1000) {
+			ms--;
+			start += 1000;
+      checkButton();
+		}
+	}
+}
 
 void runSavedState() {
   while(playing) {
     int savedActionsTime = 0;
     int servoIndex[4] = {0, 0, 0, 0};
-    // Serial.println(servoIndex[0]);
     byte servoSlotRunnedTime[4] = {0, 0, 0, 0};
 
     for (int i = 0; i < lastSaved[0]; i++)
@@ -187,7 +200,7 @@ void runSavedState() {
 
     for (int t = 0; t < savedActionsTime - 1; t++) {
       for (byte j = 0; j < SAVE_UNIT_PERIOD; j++) {
-
+        
         byte servoValue[4];
         for (byte i = 0; i < SERVO_COUNT; i++) {
           servoValue[i] =
@@ -198,7 +211,9 @@ void runSavedState() {
                               SAVE_UNIT_PERIOD))
                   : servoSaved[i][servoIndex[i]];
         }
-        delay(40);
+
+        waitAndCheckButton(40);
+
         servo[0].write(servoValue[0]);
         servo[1].write(servoValue[1]);
         servo[2].write(servoValue[2]);
