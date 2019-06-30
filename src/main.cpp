@@ -147,7 +147,6 @@ void readAndWrite() {
 }
 
 void checkButton() {  
-  Serial.println(playing);
   if (digitalRead(PLAY_BUTTON_PIN) == LOW) {
     while (digitalRead(PLAY_BUTTON_PIN) == LOW) {
     }
