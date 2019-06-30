@@ -55,6 +55,7 @@ Servo servo[SERVO_COUNT];
 
 byte lastSaved[SERVO_COUNT];
 bool saving = false;
+bool playing = false;
 byte servoSaved[SERVO_COUNT][MAX_SAVED_VALUES];
 byte servoTimePassed[SERVO_COUNT][MAX_SAVED_VALUES];
 int checkSavingPeriod = 0;
@@ -103,7 +104,7 @@ bool hasSameValue(int newValue, int index) {
   if(lastSaved[index] == 0)
     return false;
   return servoSaved[index][lastSaved[index] - 1] >= newValue - SAVE_THRESHOLD &&
-         servoSaved[index][lastSaved[index] - 1] <= newValue + SAVE_THRESHOLD`  ;
+         servoSaved[index][lastSaved[index] - 1] <= newValue + SAVE_THRESHOLD ;
 }
 
 void updateSaved(int servo_value, int index) {
@@ -148,9 +149,12 @@ void readAndWrite() {
 void checkButton() {
   if (digitalRead(PLAY_BUTTON_PIN) == LOW) {
     while (digitalRead(PLAY_BUTTON_PIN) == LOW) {
+      if(playing)
+        runSavedState();
     }
+    playing = !playing;
     Serial.println("Play Button");
-    runSavedState();
+    // runSavedState();
   }
 
   if (digitalRead(SAVE_BUTTON_PIN) == LOW) {
