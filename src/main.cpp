@@ -8,8 +8,8 @@
 #define SERVO_1_MAX_MICROSECOND 2400
 #define SERVO_2_MIN_MICROSECOND 675
 #define SERVO_2_MAX_MICROSECOND 2525
-#define SERVO_3_MIN_MICROSECOND 800
-#define SERVO_3_MAX_MICROSECOND 2000
+#define SERVO_3_MIN_MICROSECOND 707
+#define SERVO_3_MAX_MICROSECOND 2445
 
 #define SERVO_0_PIN 3
 #define SERVO_1_PIN 5
@@ -18,10 +18,10 @@
 
 #define SERVO_MAX 180
 #define SERVO_MIN 0
+#define SERVO_3_MAX 120
+#define SERVO_3_MIN 10
 
 #define SERVO_COUNT 4
-
-
 
 #define POT_0_MAX 991
 #define POT_0_MIN 60
@@ -59,7 +59,6 @@ bool playing = false;
 byte servoSaved[SERVO_COUNT][MAX_SAVED_VALUES];
 byte servoTimePassed[SERVO_COUNT][MAX_SAVED_VALUES];
 int checkSavingPeriod = 0;
-unsigned long time;
 
 Ticker read_timer(readAndWrite, TIMER_PERIOD, ENDLESS_TIMER, MILLIS);
 Ticker button_timer(checkButton, BUTTON_PERIOD, ENDLESS_TIMER, MILLIS);
@@ -72,7 +71,7 @@ void setup() {
                   SERVO_1_MAX_MICROSECOND); // defaults are 544 - 2400 to
   servo[2].attach(SERVO_2_PIN, SERVO_2_MIN_MICROSECOND,
                   SERVO_2_MAX_MICROSECOND); // defaults are 544 - 2400 to
-  servo[3].attach(SERVO_3_PIN, SERVO_3_MIN_MICROSECOND,                
+  servo[3].attach(SERVO_3_PIN, SERVO_3_MIN_MICROSECOND,
                   SERVO_3_MAX_MICROSECOND);
   pinMode(A2, INPUT);
   pinMode(A1, INPUT);
@@ -92,8 +91,7 @@ void setup() {
 
   read_timer.start();
   button_timer.start();
-  
-  time = millis();
+
 
   Serial.begin(9600);
 }
@@ -104,10 +102,10 @@ void loop() {
 }
 
 bool hasSameValue(int newValue, int index) {
-  if(lastSaved[index] == 0)
+  if (lastSaved[index] == 0)
     return false;
   return servoSaved[index][lastSaved[index] - 1] >= newValue - SAVE_THRESHOLD &&
-         servoSaved[index][lastSaved[index] - 1] <= newValue + SAVE_THRESHOLD ;
+         servoSaved[index][lastSaved[index] - 1] <= newValue + SAVE_THRESHOLD;
 }
 
 void updateSaved(int servo_value, int index) {
@@ -124,14 +122,17 @@ void readAndWrite() {
   int x[4];
 
   x[0] = map(analogRead(A0), POT_0_MAX, POT_0_MIN, SERVO_MIN, SERVO_MAX);
+  x[0] = x[0] > SERVO_MAX ? SERVO_MAX : x[0] < SERVO_MIN ? SERVO_MIN : x[0];
   servo[0].write(x[0]);
   x[1] = map(analogRead(A1), POT_1_MAX, POT_1_MIN, SERVO_MIN, SERVO_MAX);
+  x[1] = x[1] > SERVO_MAX ? SERVO_MAX : x[1] < SERVO_MIN ? SERVO_MIN : x[1];
   servo[1].write(x[1]);
   x[2] = map(analogRead(A2), POT_2_MAX, POT_2_MIN, SERVO_MIN, SERVO_MAX);
+  x[2] = x[2] > SERVO_MAX ? SERVO_MAX : x[2] < SERVO_MIN ? SERVO_MIN : x[2];
   servo[2].write(x[2]);
-  x[3] = map(analogRead(A3), POT_3_MAX, POT_3_MIN, SERVO_MIN, SERVO_MAX);
+  x[3] = map(analogRead(A3), POT_3_MAX, POT_3_MIN, SERVO_3_MIN, SERVO_3_MAX);
+  x[3] = x[3] > SERVO_3_MAX ? SERVO_3_MAX : x[3] < SERVO_3_MIN ? SERVO_3_MIN : x[3];
   servo[3].write(x[3]);
-
 
   int maxSaved = lastSaved[0];
   for (int i = 0; i < SERVO_COUNT; i++) {
@@ -149,13 +150,14 @@ void readAndWrite() {
   }
 }
 
-void checkButton() {  
+void checkButton() {
   if (digitalRead(PLAY_BUTTON_PIN) == LOW) {
     while (digitalRead(PLAY_BUTTON_PIN) == LOW) {
     }
     playing = !playing;
     Serial.println("Play Button");
-    runSavedState();
+    if (playing)
+      runSavedState();
   }
 
   if (digitalRead(SAVE_BUTTON_PIN) == LOW) {
@@ -166,6 +168,10 @@ void checkButton() {
     if (saving) {
       for (int i = 0; i < SERVO_COUNT; i++)
         lastSaved[i] = 0;
+      initServoArrays(0);
+      initServoArrays(1);
+      initServoArrays(2);
+      initServoArrays(3);
     }
   }
 }
@@ -179,18 +185,23 @@ void initServoArrays(int servoNum) {
 }
 void waitAndCheckButton(int ms) {
   uint32_t start = micros();
-	while (ms > 0) {
-		yield();
-		while ( ms > 0 && (micros() - start) >= 1000) {
-			ms--;
-			start += 1000;
-      checkButton();
-		}
-	}
+  while (ms > 0) {
+    yield();
+    while (ms > 0 && (micros() - start) >= 1000) {
+      ms--;
+      start += 1000;
+    }
+    if (digitalRead(PLAY_BUTTON_PIN) == LOW) {
+      while (digitalRead(PLAY_BUTTON_PIN) == LOW) {
+      }
+      playing = !playing;
+      return;
+    }
+  }
 }
 
 void runSavedState() {
-  while(playing) {
+  while (playing) {
     int savedActionsTime = 0;
     int servoIndex[4] = {0, 0, 0, 0};
     byte servoSlotRunnedTime[4] = {0, 0, 0, 0};
@@ -200,19 +211,21 @@ void runSavedState() {
 
     for (int t = 0; t < savedActionsTime - 1; t++) {
       for (byte j = 0; j < SAVE_UNIT_PERIOD; j++) {
-        
+
         byte servoValue[4];
         for (byte i = 0; i < SERVO_COUNT; i++) {
           servoValue[i] =
               servoTimePassed[i][servoIndex[i]] - servoSlotRunnedTime[i] == 1
                   ? servoSaved[i][servoIndex[i]] +
                         (j * ((servoSaved[i][servoIndex[i] + 1] -
-                              servoSaved[i][servoIndex[i]]) /
+                               servoSaved[i][servoIndex[i]]) /
                               SAVE_UNIT_PERIOD))
                   : servoSaved[i][servoIndex[i]];
         }
 
         waitAndCheckButton(40);
+        if (!playing)
+          return;
 
         servo[0].write(servoValue[0]);
         servo[1].write(servoValue[1]);
