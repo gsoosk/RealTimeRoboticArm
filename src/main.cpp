@@ -146,15 +146,13 @@ void readAndWrite() {
   }
 }
 
-void checkButton() {
+void checkButton() {  
+  Serial.println(playing);
   if (digitalRead(PLAY_BUTTON_PIN) == LOW) {
     while (digitalRead(PLAY_BUTTON_PIN) == LOW) {
-      if(playing)
-        runSavedState();
     }
     playing = !playing;
     Serial.println("Play Button");
-    // runSavedState();
   }
 
   if (digitalRead(SAVE_BUTTON_PIN) == LOW) {
@@ -178,39 +176,41 @@ void initServoArrays(int servoNum) {
 }
 
 void runSavedState() {
-  int savedActionsTime = 0;
-  int servoIndex[4] = {0, 0, 0, 0};
-  // Serial.println(servoIndex[0]);
-  byte servoSlotRunnedTime[4] = {0, 0, 0, 0};
+  while(playing) {
+    int savedActionsTime = 0;
+    int servoIndex[4] = {0, 0, 0, 0};
+    // Serial.println(servoIndex[0]);
+    byte servoSlotRunnedTime[4] = {0, 0, 0, 0};
 
-  for (int i = 0; i < lastSaved[0]; i++)
-    savedActionsTime += servoTimePassed[0][i];
+    for (int i = 0; i < lastSaved[0]; i++)
+      savedActionsTime += servoTimePassed[0][i];
 
-  for (int t = 0; t < savedActionsTime - 1; t++) {
-    for (byte j = 0; j < SAVE_UNIT_PERIOD; j++) {
+    for (int t = 0; t < savedActionsTime - 1; t++) {
+      for (byte j = 0; j < SAVE_UNIT_PERIOD; j++) {
 
-      byte servoValue[4];
-      for (byte i = 0; i < SERVO_COUNT; i++) {
-        servoValue[i] =
-            servoTimePassed[i][servoIndex[i]] - servoSlotRunnedTime[i] == 1
-                ? servoSaved[i][servoIndex[i]] +
-                      (j * ((servoSaved[i][servoIndex[i] + 1] -
-                             servoSaved[i][servoIndex[i]]) /
-                            SAVE_UNIT_PERIOD))
-                : servoSaved[i][servoIndex[i]];
+        byte servoValue[4];
+        for (byte i = 0; i < SERVO_COUNT; i++) {
+          servoValue[i] =
+              servoTimePassed[i][servoIndex[i]] - servoSlotRunnedTime[i] == 1
+                  ? servoSaved[i][servoIndex[i]] +
+                        (j * ((servoSaved[i][servoIndex[i] + 1] -
+                              servoSaved[i][servoIndex[i]]) /
+                              SAVE_UNIT_PERIOD))
+                  : servoSaved[i][servoIndex[i]];
+        }
+        delay(40);
+        servo[0].write(servoValue[0]);
+        servo[1].write(servoValue[1]);
+        servo[2].write(servoValue[2]);
+        servo[3].write(servoValue[3]);
       }
-      delay(40);
-      servo[0].write(servoValue[0]);
-      servo[1].write(servoValue[1]);
-      servo[2].write(servoValue[2]);
-      servo[3].write(servoValue[3]);
-    }
 
-    for (byte i = 0; i < SERVO_COUNT; i++) {
-      servoSlotRunnedTime[i]++;
-      if (servoTimePassed[i][servoIndex[i]] == servoSlotRunnedTime[i]) {
-        servoIndex[i]++;
-        servoSlotRunnedTime[i] = 0;
+      for (byte i = 0; i < SERVO_COUNT; i++) {
+        servoSlotRunnedTime[i]++;
+        if (servoTimePassed[i][servoIndex[i]] == servoSlotRunnedTime[i]) {
+          servoIndex[i]++;
+          servoSlotRunnedTime[i] = 0;
+        }
       }
     }
   }
