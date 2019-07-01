@@ -111,7 +111,7 @@ bool hasSameValue(int newValue, int index) {
 }
 
 void updateSaved(int servo_value, int index) {
-  if (!hasSameValue(servo_value, index)) {
+  if ((!hasSameValue(servo_value, index)) || (servoTimePassed[index][lastSaved[index] - 1] == 255)) {
     servoSaved[index][lastSaved[index]] = servo_value;
     servoTimePassed[index][lastSaved[index]] = 1;
     lastSaved[index]++;
